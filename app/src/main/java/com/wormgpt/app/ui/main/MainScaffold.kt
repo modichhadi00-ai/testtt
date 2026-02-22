@@ -1,0 +1,90 @@
+package com.wormgpt.app.ui.main
+
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.wormgpt.app.data.repository.AuthRepository
+import com.wormgpt.app.ui.chat.ChatScreen
+import com.wormgpt.app.ui.sidebar.DrawerContent
+import com.wormgpt.app.ui.subscription.SubscriptionScreen
+import kotlinx.coroutines.launch
+
+@Composable
+fun MainScaffold(
+    authRepository: AuthRepository,
+    onSignOut: () -> Unit
+) {
+    val navController = rememberNavController()
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            DrawerContent(
+                authRepository = authRepository,
+                onChatSelected = { chatId ->
+                    scope.launch { drawerState.close() }
+                    navController.navigate("chat/$chatId") { launchSingleTop = true }
+                },
+                onNewChat = {
+                    scope.launch { drawerState.close() }
+                    navController.navigate("chat/new") { launchSingleTop = true }
+                },
+                onManageSubscription = {
+                    scope.launch { drawerState.close() }
+                    navController.navigate("subscription") { launchSingleTop = true }
+                },
+                onSignOut = onSignOut
+            )
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("WORMGPT") },
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                        }
+                    }
+                )
+            }
+        ) { padding ->
+            NavHost(
+                navController = navController,
+                startDestination = "chat/new",
+                modifier = Modifier.padding(padding)
+            ) {
+                composable("chat/new") {
+                    ChatScreen(chatId = null, authRepository = authRepository)
+                }
+                composable(
+                    route = "chat/{chatId}",
+                    arguments = listOf(navArgument("chatId") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val chatId = backStackEntry.arguments?.getString("chatId") ?: return@composable
+                    ChatScreen(chatId = chatId, authRepository = authRepository)
+                }
+                composable("subscription") {
+                    SubscriptionScreen(authRepository = authRepository)
+                }
+            }
+        }
+    }
+}

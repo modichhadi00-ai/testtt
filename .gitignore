@@ -1,0 +1,32 @@
+# Android
+*.iml
+.gradle/
+local.properties
+.idea/
+build/
+app/build/
+*.apk
+*.ap_
+*.aab
+
+# Kotlin
+*.class
+*.jar
+*.war
+
+# Node / Firebase functions
+functions/node_modules/
+functions/lib/
+functions/.env
+.npm
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Firebase
+.firebase/
+*.runtimeconfig.json
