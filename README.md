@@ -29,9 +29,13 @@ Native Android AI chatbot (Kotlin, Jetpack Compose) using Firebase (Auth, Firest
 ### 2. DeepSeek API key
 
 - Get an API key from [DeepSeek](https://platform.deepseek.com).
-- Set it for Cloud Functions:
-  - **Option A:** `firebase functions:config:set deepseek.api_key="YOUR_KEY"`
-  - **Option B:** Set environment variable `DEEPSEEK_API_KEY` in your deployment (e.g. Secret Manager).
+- Set it for Cloud Functions (run from project root):
+  - **Option A (one command):**  
+    **PowerShell:** `$env:DEEPSEEK_API_KEY="sk-your-key"; node scripts/set-deepseek-key.js`  
+    **CMD:** `set DEEPSEEK_API_KEY=sk-your-key && node scripts/set-deepseek-key.js`  
+    Then run `firebase deploy --only functions`.
+  - **Option B:** `firebase functions:config:set deepseek.api_key="YOUR_KEY"` then deploy.
+  - **Option C:** Set env `DEEPSEEK_API_KEY` in your deployment (e.g. Secret Manager).
 
 ### 3. Deploy Cloud Functions
 

@@ -1,9 +1,10 @@
+import * as dotenv from "dotenv";
+dotenv.config();
+
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 
 admin.initializeApp();
-
-const require = createRequire(import.meta.url);
 
 const DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions";
 
