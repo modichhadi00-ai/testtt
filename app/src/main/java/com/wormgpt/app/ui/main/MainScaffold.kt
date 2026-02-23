@@ -10,7 +10,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
@@ -24,6 +26,7 @@ import com.wormgpt.app.ui.sidebar.DrawerContent
 import com.wormgpt.app.ui.subscription.SubscriptionScreen
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScaffold(
     authRepository: AuthRepository,
@@ -65,11 +68,11 @@ fun MainScaffold(
                     }
                 )
             }
-        ) { padding ->
+        ) { innerPadding ->
             NavHost(
                 navController = navController,
                 startDestination = "chat/new",
-                modifier = Modifier.padding(padding)
+                modifier = Modifier.padding(innerPadding)
             ) {
                 composable("chat/new") {
                     ChatScreen(chatId = null, authRepository = authRepository)

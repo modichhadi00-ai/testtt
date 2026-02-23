@@ -23,7 +23,8 @@ class AuthRepository(
     }
 
     suspend fun getIdToken(forceRefresh: Boolean = false): String? {
-        return auth.currentUser?.getIdToken(forceRefresh)?.await()
+        val result = auth.currentUser?.getIdToken(forceRefresh)?.await() ?: return null
+        return result.token
     }
 
     suspend fun signInWithEmailAndPassword(email: String, password: String): Result<FirebaseUser> {
