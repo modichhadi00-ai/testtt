@@ -1,29 +1,43 @@
 package com.wormgpt.app.ui.theme
 
 import android.app.Activity
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 
 private val WormGptDarkColorScheme = darkColorScheme(
     primary = WormRed,
-    onPrimary = androidx.compose.ui.graphics.Color.White,
+    onPrimary = Color.White,
     primaryContainer = WormRedDark,
-    onPrimaryContainer = androidx.compose.ui.graphics.Color.White,
+    onPrimaryContainer = Color.White,
     secondary = WormRedLight,
-    onSecondary = androidx.compose.ui.graphics.Color.White,
+    onSecondary = Color.White,
+    tertiary = WormRedDim,
     background = Black,
-    onBackground = androidx.compose.ui.graphics.Color.White,
+    onBackground = Color.White,
     surface = SurfaceDark,
-    onSurface = androidx.compose.ui.graphics.Color.White,
+    onSurface = Color.White,
     surfaceVariant = SurfaceVariant,
     onSurfaceVariant = OnSurfaceVariant,
-    error = WormRed,
-    onError = androidx.compose.ui.graphics.Color.White
+    error = WormRedLight,
+    onError = Color.White,
+    outline = SurfaceElevated,
+    outlineVariant = OnSurfaceMuted
+)
+
+private val Shapes = androidx.compose.material3.Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(20.dp),
+    extraLarge = RoundedCornerShape(28.dp)
 )
 
 @Composable
@@ -44,6 +58,7 @@ fun WormGptTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = WormGptTypography,
+        shapes = Shapes,
         content = content
     )
 }
