@@ -68,4 +68,6 @@ Then **rebuild the app** and install the new APK.
 - Add SHA-1 in Firebase.
 - Rebuild: run your build (e.g. GitHub Actions or `./gradlew assembleDebug`) and install the new APK.
 
+**If you use the APK built by GitHub Actions:** That APK is signed with a **different** keystore (on GitHub’s servers), so it has a **different SHA-1**. You must add that SHA-1 to Firebase too. After the first successful “Build APK” run, open the workflow run → click the **Create debug keystore** step → in the log find the line **SHA1:** and copy the value → in Firebase add it as another fingerprint for your Android app. The workflow caches the keystore so the same SHA-1 is used for every future GitHub build. You can have both your PC’s SHA-1 and the GitHub SHA-1 in Firebase.
+
 After this, email/password sign-up and Google Sign-In should work.

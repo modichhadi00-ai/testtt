@@ -43,6 +43,24 @@ jobs:
       - name: Install Android 34 platform and build-tools
         run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
+      - name: Cache debug keystore
+        uses: actions/cache@v4
+        id: keystore-cache
+        with:
+          path: ~/.android
+          key: wormgpt-debug-keystore-v1
+
+      - name: Create debug keystore (for consistent SHA-1)
+        run: |
+          mkdir -p ~/.android
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -genkey -v -keystore ~/.android/debug.keystore -alias androiddebugkey \
+              -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+          echo "SHA-1 for this build (add to Firebase if you use the APK from GitHub):"
+          keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android | grep "SHA1:"
+
       - name: Install Gradle and generate wrapper
         working-directory: ${{ steps.project.outputs.root }}
         run: |
