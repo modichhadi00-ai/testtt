@@ -19,21 +19,25 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CardMembership
 import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.wormgpt.app.data.model.Chat
+import kotlinx.coroutines.launch
 import com.wormgpt.app.data.repository.AuthRepository
 import com.wormgpt.app.data.repository.ChatRepository
 import com.wormgpt.app.ui.theme.SurfaceDark
@@ -42,14 +46,17 @@ import com.wormgpt.app.ui.theme.WormRed
 @Composable
 fun DrawerContent(
     authRepository: AuthRepository,
+    currentChatId: String?,
     onChatSelected: (String) -> Unit,
     onNewChat: () -> Unit,
+    onDeleteChat: (String) -> Unit,
     onManageSubscription: () -> Unit,
     onSignOut: () -> Unit
 ) {
     val userId = authRepository.currentUserId ?: return
     val chatRepository = remember { ChatRepository() }
     val chats by chatRepository.getChats(userId).collectAsState(initial = emptyList())
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
@@ -92,7 +99,17 @@ fun DrawerContent(
         ) {
             items(count = chats.size, key = { chats[it].id }) { index ->
                 val chat = chats[index]
-                DrawerChatItem(chat = chat, onClick = { onChatSelected(chat.id) })
+                DrawerChatItem(
+                    chat = chat,
+                    isSelected = chat.id == currentChatId,
+                    onClick = { onChatSelected(chat.id) },
+                    onDelete = {
+                        scope.launch {
+                            runCatching { chatRepository.deleteChat(chat.id) }
+                            onDeleteChat(chat.id)
+                        }
+                    }
+                )
             }
         }
         Divider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(vertical = 4.dp, horizontal = 16.dp))
@@ -123,23 +140,36 @@ private fun DrawerItem(
 }
 
 @Composable
-private fun DrawerChatItem(chat: Chat, onClick: () -> Unit) {
+private fun DrawerChatItem(chat: Chat, isSelected: Boolean, onClick: () -> Unit, onDelete: () -> Unit) {
     Row(
         modifier = Modifier
             .padding(horizontal = 12.dp)
             .clip(RoundedCornerShape(10.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 8.dp),
+            .padding(start = 8.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Icon(Icons.Default.Chat, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+        Icon(
+            Icons.Default.Chat,
+            contentDescription = null,
+            tint = if (isSelected) WormRed else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp)
+        )
         Text(
             text = chat.title.ifEmpty { "New chat" },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false)
+        )
+        IconButton(
+            onClick = onDelete,
+            modifier = Modifier.size(32.dp),
+            content = {
+                Icon(Icons.Default.Delete, contentDescription = "Delete chat", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+            }
         )
     }
 }

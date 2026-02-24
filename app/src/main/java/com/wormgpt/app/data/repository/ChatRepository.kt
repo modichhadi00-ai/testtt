@@ -86,6 +86,12 @@ class ChatRepository(
         chatsCollection.document(chatId).update("updatedAt", Timestamp(now, 0)).await()
     }
 
+    suspend fun deleteChat(chatId: String) {
+        val messageDocs = messagesCollection.whereEqualTo("chatId", chatId).get().await()
+        messageDocs.documents.forEach { it.reference.delete().await() }
+        chatsCollection.document(chatId).delete().await()
+    }
+
     fun getMessages(chatId: String): Flow<List<Message>> = callbackFlow {
         val listener = messagesCollection
             .whereEqualTo("chatId", chatId)

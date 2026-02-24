@@ -40,6 +40,8 @@ fun MainScaffold(
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val currentBackStackEntry = navController.currentBackStackEntry
+    val currentChatId = currentBackStackEntry?.arguments?.getString("chatId")
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -47,13 +49,25 @@ fun MainScaffold(
         drawerContent = {
             DrawerContent(
                 authRepository = authRepository,
+                currentChatId = currentChatId,
                 onChatSelected = { chatId ->
                     scope.launch { drawerState.close() }
                     navController.navigate("chat/$chatId") { launchSingleTop = true }
                 },
                 onNewChat = {
                     scope.launch { drawerState.close() }
-                    navController.navigate("chat/new") { launchSingleTop = true }
+                    navController.navigate("chat/new") {
+                        popUpTo("chat/new") { inclusive = true; saveState = false }
+                        launchSingleTop = true
+                    }
+                },
+                onDeleteChat = { deletedId ->
+                    if (deletedId == currentChatId) {
+                        navController.navigate("chat/new") {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = false; saveState = false }
+                            launchSingleTop = true
+                        }
+                    }
                 },
                 onManageSubscription = {
                     scope.launch { drawerState.close() }
