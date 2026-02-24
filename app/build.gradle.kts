@@ -13,7 +13,12 @@ android {
         versionCode = 1
         versionName = "1.0"
         multiDexEnabled = true
-        buildConfigField("String", "CLOUD_FUNCTIONS_URL", "\"https://us-central1-your-project-id.cloudfunctions.net\"")
+        val gsFile = file("google-services.json")
+        val projectId = if (gsFile.exists()) {
+            val json = groovy.json.JsonSlurper().parseText(gsFile.readText()) as Map<*, *>
+            (json["project_info"] as Map<*, *>)["project_id"] as? String ?: "your-project-id"
+        } else "your-project-id"
+        buildConfigField("String", "CLOUD_FUNCTIONS_URL", "\"https://us-central1-$projectId.cloudfunctions.net\"")
     }
     buildTypes {
         release {

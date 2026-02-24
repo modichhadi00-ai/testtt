@@ -74,8 +74,13 @@ fun LoginScreen(
                     onFailure = { e -> error = e.message; isLoading = false }
                 )
             }
-        } catch (_: ApiException) {
-            error = "Google sign in failed"
+        } catch (e: ApiException) {
+            error = when (e.statusCode) {
+                10 -> "Add your app SHA-1 in Firebase Console (see FIREBASE_SETUP.md)"
+                7 -> "Network error. Check your connection."
+                12501 -> "Sign-in cancelled"
+                else -> "Google sign in failed (${e.statusCode}). Check Web Client ID and SHA-1 in Firebase."
+            }
             isLoading = false
         }
     }
@@ -133,7 +138,19 @@ fun LoginScreen(
                             )
                             onLoggedIn()
                         },
-                        onFailure = { e -> error = e.message; isLoading = false }
+                        onFailure = { e ->
+                            error = when {
+                                e.message?.contains("configuration_not_found") == true ->
+                                    "Enable Identity Toolkit API in Google Cloud Console (see FIREBASE_SETUP.md)"
+                                e.message?.contains("INVALID_EMAIL") == true -> "Invalid email address"
+                                e.message?.contains("EMAIL_NOT_FOUND") == true -> "No account with this email"
+                                e.message?.contains("WRONG_PASSWORD") == true -> "Wrong password"
+                                e.message?.contains("EMAIL_EXISTS") == true -> "Email already registered. Sign in instead."
+                                e.message?.contains("WEAK_PASSWORD") == true -> "Password must be at least 6 characters"
+                                else -> e.message ?: "Sign in failed"
+                            }
+                            isLoading = false
+                        }
                     )
                 }
             },
@@ -149,8 +166,13 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {
+                val webClientId = context.getString(R.string.default_web_client_id)
+                if (webClientId.isBlank() || webClientId == "YOUR_WEB_CLIENT_ID" || !webClientId.endsWith(".apps.googleusercontent.com")) {
+                    error = "Firebase not set up. Add your Web Client ID in app/src/main/res/values/strings.xml (see FIREBASE_SETUP.md)"
+                    return@Button
+                }
                 val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                    .requestIdToken(context.getString(R.string.default_web_client_id))
+                    .requestIdToken(webClientId)
                     .requestEmail()
                     .build()
                 val signInClient = GoogleSignIn.getClient(context, gso)

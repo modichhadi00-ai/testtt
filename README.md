@@ -14,6 +14,12 @@ Native Android AI chatbot (Kotlin, Jetpack Compose) using Firebase (Auth, Firest
 
 ---
 
+## Full setup (login + database + chat)
+
+For a **step-by-step guide** so login, Firestore, and chat all work, use **[FULL_APP_SETUP.md](FULL_APP_SETUP.md)**.
+
+---
+
 ## Setup (Firebase, DeepSeek, etc.)
 
 ### 1. Firebase
@@ -47,7 +53,7 @@ cd ..
 firebase deploy --only functions
 ```
 
-After deploy, copy the **chatStream** function URL (e.g. `https://us-central1-YOUR_PROJECT.cloudfunctions.net`) and set it in `app/build.gradle.kts` as `buildConfigField("String", "CLOUD_FUNCTIONS_URL", "\"https://...\"")`.
+The app **automatically** uses your Cloud Functions URL from `app/google-services.json` (project ID). If your functions use a different region, set `CLOUD_FUNCTIONS_URL` in `app/build.gradle.kts`.
 
 ### 4. Firestore indexes
 
