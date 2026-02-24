@@ -20,7 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.wormgpt.app.data.repository.AuthRepository
@@ -37,10 +36,11 @@ fun SubscriptionScreen(
 ) {
     val uid = authRepository.currentUserId ?: return
     val userRepository = remember { UserRepository() }
-    var profile by remember { mutableStateOf<com.wormgpt.app.data.model.UserProfile?>(null) }
+    val profileState = remember { mutableStateOf<com.wormgpt.app.data.model.UserProfile?>(null) }
+    val profile = profileState.value
 
     LaunchedEffect(uid) {
-        profile = userRepository.getProfile(uid)
+        profileState.value = userRepository.getProfile(uid)
     }
 
     Box(
@@ -80,24 +80,27 @@ fun SubscriptionScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = profile?.subscriptionTier?.replaceFirstChar { it.uppercase() } ?: "Free",
+                        text = profile?.subscriptionTier?.replaceFirstChar { c -> c.uppercaseChar() } ?: "Free",
                         style = MaterialTheme.typography.titleLarge,
                         color = WormRed,
                         modifier = Modifier.padding(top = 4.dp)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    profile?.subscriptionExpiresAt?.let { ts ->
-                        val dateStr = SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(ts * 1000))
+                    val expiresAt = profile?.subscriptionExpiresAt
+                    if (expiresAt != null) {
+                        val dateStr = SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(expiresAt * 1000))
                         Text(
                             "Expires: $dateStr",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    } ?: Text(
-                        "No expiry (free tier)",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    } else {
+                        Text(
+                            "No expiry (free tier)",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))

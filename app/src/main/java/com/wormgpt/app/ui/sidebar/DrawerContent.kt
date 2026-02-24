@@ -20,7 +20,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CardMembership
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -97,7 +97,7 @@ fun DrawerContent(
                 modifier = Modifier.padding(bottom = 16.dp)
             )
         }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.padding(vertical = 8.dp))
+        Divider(color = MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.padding(vertical = 8.dp))
 
         DrawerItem(
             icon = Icons.Default.Add,
@@ -120,7 +120,7 @@ fun DrawerContent(
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.padding(vertical = 4.dp))
+        Divider(color = MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.padding(vertical = 4.dp))
         DrawerItem(
             icon = Icons.Default.CardMembership,
             label = "Subscription",

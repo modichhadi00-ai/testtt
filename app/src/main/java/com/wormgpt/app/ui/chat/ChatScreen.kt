@@ -28,13 +28,13 @@ import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -120,7 +120,8 @@ fun ChatScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        state.error?.let { err ->
+        if (state.error != null) {
+            val err = state.error!!
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -239,7 +240,7 @@ fun ChatScreen(
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                     )
                 )
-                FilledIconButton(
+                IconButton(
                     onClick = {
                         viewModel.sendMessage(input, pendingAttachmentUrls)
                         input = ""
@@ -248,13 +249,14 @@ fun ChatScreen(
                     enabled = (input.isNotBlank() || pendingAttachmentUrls.isNotEmpty()) && !state.isLoading,
                     modifier = Modifier
                         .size(48.dp)
-                        .clip(CircleShape),
-                    colors = androidx.compose.material3.FilledIconButtonDefaults.filledIconButtonColors(
-                        containerColor = WormRed,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
+                        .clip(CircleShape)
+                        .background(WormRed)
                 ) {
-                    Icon(Icons.Default.Send, contentDescription = "Send")
+                    Icon(
+                        Icons.Default.Send,
+                        contentDescription = "Send",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
                 }
             }
         }
