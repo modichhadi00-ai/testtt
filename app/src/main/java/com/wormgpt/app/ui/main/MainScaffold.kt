@@ -1,21 +1,21 @@
 package com.wormgpt.app.ui.main
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
@@ -43,6 +43,7 @@ fun MainScaffold(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
+        gesturesEnabled = drawerState.isOpen,
         drawerContent = {
             DrawerContent(
                 authRepository = authRepository,
@@ -58,34 +59,26 @@ fun MainScaffold(
                     scope.launch { drawerState.close() }
                     navController.navigate("subscription") { launchSingleTop = true }
                 },
-                onSignOut = onSignOut
+                onSignOut = {
+                    scope.launch { drawerState.close() }
+                    onSignOut()
+                }
             )
-        }
+        },
+        scrimColor = Black.copy(alpha = 0.6f)
     ) {
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = {
-                        Text(
-                            "WORMGPT",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = WormRed
-                        )
+                        Text("WORMGPT", style = MaterialTheme.typography.titleLarge, color = WormRed)
                     },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(
-                                Icons.Default.Menu,
-                                contentDescription = "Menu",
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
+                            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = MaterialTheme.colorScheme.onSurface)
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Black,
-                        titleContentColor = WormRed,
-                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface
-                    )
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Black)
                 )
             },
             containerColor = Black
@@ -97,20 +90,20 @@ fun MainScaffold(
                     .padding(innerPadding)
                     .background(Black)
             ) {
-                    composable("chat/new") {
-                        ChatScreen(chatId = null, authRepository = authRepository)
-                    }
-                    composable(
-                        route = "chat/{chatId}",
-                        arguments = listOf(navArgument("chatId") { type = NavType.StringType })
-                    ) { backStackEntry ->
-                        val chatId = backStackEntry.arguments?.getString("chatId") ?: return@composable
-                        ChatScreen(chatId = chatId, authRepository = authRepository)
-                    }
-                    composable("subscription") {
-                        SubscriptionScreen(authRepository = authRepository)
-                    }
+                composable("chat/new") {
+                    ChatScreen(chatId = null, authRepository = authRepository)
                 }
+                composable(
+                    route = "chat/{chatId}",
+                    arguments = listOf(navArgument("chatId") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val chatId = backStackEntry.arguments?.getString("chatId") ?: return@composable
+                    ChatScreen(chatId = chatId, authRepository = authRepository)
+                }
+                composable("subscription") {
+                    SubscriptionScreen(authRepository = authRepository)
+                }
+            }
         }
     }
 }

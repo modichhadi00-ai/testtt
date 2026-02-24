@@ -1,7 +1,6 @@
 package com.wormgpt.app.ui.chat
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.wormgpt.app.data.model.Message
 import com.wormgpt.app.data.remote.WormGptApi
@@ -38,8 +37,8 @@ class ChatViewModel(
                     chatRepository.getMessages(chatId).collect { list ->
                         _state.update { it.copy(messages = list) }
                     }
-                }.onFailure {
-                    _state.update { s -> s.copy(error = it.message ?: "Could not load messages") }
+                }.onFailure { e ->
+                    _state.update { it.copy(error = "Load failed: ${e.message}") }
                 }
             }
         }
@@ -48,57 +47,76 @@ class ChatViewModel(
     fun sendMessage(text: String, attachmentUrls: List<String> = emptyList()) {
         if (text.isBlank()) return
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
-            var cid = _state.value.currentChatId
-            if (cid == null) {
-                val uid = authRepository.currentUserId ?: run {
-                    _state.update { it.copy(isLoading = false, error = "Not signed in") }
+            try {
+                _state.update { it.copy(isLoading = true, error = null) }
+                var cid = _state.value.currentChatId
+                if (cid == null) {
+                    val uid = authRepository.currentUserId ?: run {
+                        _state.update { it.copy(isLoading = false, error = "Not signed in") }
+                        return@launch
+                    }
+                    val chat = chatRepository.createChat(uid, "New chat")
+                    cid = chat.id
+                    _state.update { it.copy(currentChatId = cid) }
+                }
+
+                runCatching { chatRepository.addMessage(cid, "user", text, attachmentUrls) }
+
+                val userMsg = Message(id = "", chatId = cid, role = "user", content = text, attachmentUrls = attachmentUrls, createdAt = System.currentTimeMillis() / 1000)
+                val messages = _state.value.messages + userMsg
+                _state.update { it.copy(messages = messages, streamingContent = "") }
+
+                val apiMessages = messages.map { msg ->
+                    val content = if (msg.attachmentUrls.isNotEmpty())
+                        msg.content + "\n\n[Attachments: ${msg.attachmentUrls.joinToString()}]"
+                    else msg.content
+                    WormGptApi.ChatMessage(msg.role, content)
+                }
+                val systemPrompt = "You are WORMGPT, a helpful AI assistant. Respond in clear, well-formatted markdown when appropriate (headers, bold, lists, code)."
+                val fullMessages = listOf(WormGptApi.ChatMessage("system", systemPrompt)) + apiMessages
+
+                var streamedContent = ""
+                val result = api.chatStream(
+                    messages = fullMessages,
+                    onChunk = { chunk ->
+                        streamedContent += chunk
+                        _state.update { it.copy(streamingContent = streamedContent) }
+                    },
+                    onDone = { }
+                )
+
+                result.onFailure { e ->
+                    val msg = e.message ?: "Request failed"
+                    val display = when {
+                        msg.contains("your-project-id") -> "Cloud Functions not deployed. Deploy with: firebase deploy --only functions"
+                        msg.contains("Unable to resolve host") || msg.contains("UnknownHostException") -> "Cannot reach server. Check internet or deploy Cloud Functions."
+                        msg.contains("404") -> "Cloud Function not found. Deploy: firebase deploy --only functions"
+                        msg.contains("401") || msg.contains("403") -> "Auth error. Try signing out and back in."
+                        msg.contains("500") -> "Server error. Check Cloud Functions logs."
+                        msg.contains("DEEPSEEK") || msg.contains("DeepSeek") -> "DeepSeek API key not set. See FULL_APP_SETUP.md step 10."
+                        else -> msg
+                    }
+                    _state.update { it.copy(isLoading = false, error = display, streamingContent = "") }
                     return@launch
                 }
-                val chat = chatRepository.createChat(uid, "New chat")
-                cid = chat.id
-                _state.update { it.copy(currentChatId = cid) }
-            }
-            chatRepository.addMessage(cid, "user", text, attachmentUrls)
-            val messages = _state.value.messages + Message(id = "", chatId = cid, role = "user", content = text, attachmentUrls = attachmentUrls, createdAt = System.currentTimeMillis() / 1000)
-            _state.update { it.copy(messages = messages, streamingContent = "") }
 
-            val apiMessages = messages.map { msg ->
-                val content = if (msg.attachmentUrls.isNotEmpty())
-                    msg.content + "\n\n[Attachments: ${msg.attachmentUrls.joinToString()}]"
-                else msg.content
-                WormGptApi.ChatMessage(msg.role, content)
-            }
-            val systemPrompt = "You are WORMGPT, a helpful AI assistant. Respond in clear, well-formatted markdown when appropriate (headers, bold, lists, code)."
-            val fullMessages = listOf(WormGptApi.ChatMessage("system", systemPrompt)) + apiMessages
-
-            var streamedContent = ""
-            val result = api.chatStream(
-                messages = fullMessages,
-                onChunk = { chunk ->
-                    streamedContent += chunk
-                    _state.update { it.copy(streamingContent = streamedContent) }
-                },
-                onDone = { }
-            )
-            result.onFailure { e ->
-                _state.update {
-                    it.copy(isLoading = false, error = e.message ?: "Request failed", streamingContent = "")
+                val fullContent = _state.value.streamingContent
+                if (fullContent.isNotEmpty()) {
+                    runCatching { chatRepository.addMessage(cid!!, "assistant", fullContent) }
                 }
-                return@launch
-            }
-            val fullContent = _state.value.streamingContent
-            chatRepository.addMessage(cid!!, "assistant", fullContent)
-            val updatedMessages = _state.value.messages + Message(id = "", chatId = cid, role = "assistant", content = fullContent, createdAt = System.currentTimeMillis() / 1000)
-            _state.update {
-                it.copy(
-                    messages = updatedMessages,
-                    streamingContent = "",
-                    isLoading = false
-                )
-            }
-            if (messages.size == 1) {
-                chatRepository.updateChatTitle(cid, text.take(50).ifEmpty { "New chat" })
+                val aiMsg = Message(id = "", chatId = cid!!, role = "assistant", content = fullContent, createdAt = System.currentTimeMillis() / 1000)
+                _state.update {
+                    it.copy(
+                        messages = it.messages + aiMsg,
+                        streamingContent = "",
+                        isLoading = false
+                    )
+                }
+                if (messages.size == 1) {
+                    runCatching { chatRepository.updateChatTitle(cid, text.take(50).ifEmpty { "New chat" }) }
+                }
+            } catch (e: Exception) {
+                _state.update { it.copy(isLoading = false, error = e.message ?: "Unexpected error", streamingContent = "") }
             }
         }
     }

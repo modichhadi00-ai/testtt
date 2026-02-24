@@ -7,11 +7,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,10 +31,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.wormgpt.app.data.model.Chat
 import com.wormgpt.app.data.repository.AuthRepository
 import com.wormgpt.app.data.repository.ChatRepository
+import com.wormgpt.app.ui.theme.SurfaceDark
 import com.wormgpt.app.ui.theme.WormRed
 
 @Composable
@@ -51,87 +53,51 @@ fun DrawerContent(
 
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(20.dp)
+            .width(280.dp)
+            .fillMaxHeight()
+            .background(SurfaceDark)
+            .padding(vertical = 16.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(36.dp)
                     .clip(CircleShape)
                     .background(WormRed),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "W",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
+                Text("W", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onPrimary)
             }
-            Spacer(modifier = Modifier.size(12.dp))
-            Text(
-                text = "WORMGPT",
-                style = MaterialTheme.typography.titleLarge,
-                color = WormRed
-            )
+            Spacer(modifier = Modifier.size(10.dp))
+            Column {
+                Text("WORMGPT", style = MaterialTheme.typography.titleMedium, color = WormRed)
+                val label = authRepository.currentUser?.email ?: "Guest"
+                Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
         }
-        authRepository.currentUser?.email?.let { email ->
-            Text(
-                text = email,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-        } ?: run {
-            Text(
-                text = "Guest",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-        }
-        Divider(color = MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.padding(vertical = 8.dp))
-
-        DrawerItem(
-            icon = Icons.Default.Add,
-            label = "New chat",
-            onClick = onNewChat
-        )
+        Divider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp))
+        DrawerItem(icon = Icons.Default.Add, label = "New chat", onClick = onNewChat)
         Text(
-            text = "Recent",
-            style = MaterialTheme.typography.labelMedium,
+            "Recent",
+            style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+            modifier = Modifier.padding(start = 20.dp, top = 16.dp, bottom = 6.dp)
         )
         LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.heightIn(max = 280.dp)
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             items(count = chats.size, key = { chats[it].id }) { index ->
                 val chat = chats[index]
                 DrawerChatItem(chat = chat, onClick = { onChatSelected(chat.id) })
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
-        Divider(color = MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.padding(vertical = 4.dp))
-        DrawerItem(
-            icon = Icons.Default.CardMembership,
-            label = "Subscription",
-            onClick = onManageSubscription
-        )
-        DrawerItem(
-            icon = Icons.Default.Logout,
-            label = "Sign out",
-            onClick = onSignOut,
-            tint = WormRed
-        )
+        Divider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(vertical = 4.dp, horizontal = 16.dp))
+        DrawerItem(icon = Icons.Default.CardMembership, label = "Subscription", onClick = onManageSubscription)
+        DrawerItem(icon = Icons.Default.Logout, label = "Sign out", onClick = onSignOut, tint = WormRed)
     }
 }
 
@@ -144,43 +110,36 @@ private fun DrawerItem(
 ) {
     Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 2.dp)
+            .clip(RoundedCornerShape(10.dp))
             .clickable(onClick = onClick)
-            .padding(12.dp),
+            .padding(horizontal = 8.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
         Text(text = label, style = MaterialTheme.typography.bodyMedium, color = tint)
     }
 }
 
 @Composable
-private fun DrawerChatItem(
-    chat: Chat,
-    onClick: () -> Unit
-) {
+private fun DrawerChatItem(chat: Chat, onClick: () -> Unit) {
     Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp)
+            .clip(RoundedCornerShape(10.dp))
             .clickable(onClick = onClick)
-            .padding(12.dp),
+            .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Icon(
-            Icons.Default.Chat,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(20.dp)
-        )
+        Icon(Icons.Default.Chat, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
         Text(
             text = chat.title.ifEmpty { "New chat" },
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }

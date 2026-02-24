@@ -4,10 +4,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.wormgpt.app.data.repository.AuthRepository
 import com.wormgpt.app.ui.auth.LoginScreen
@@ -24,26 +26,39 @@ fun WormGptNavHost(
     navController: NavHostController = rememberNavController()
 ) {
     val authState by authRepository.currentUserFlow().collectAsState(initial = authRepository.currentUser)
-    val backStackEntry by navController.currentBackStackEntryAsState()
+    var navigated by remember { mutableStateOf(false) }
 
     LaunchedEffect(authState) {
-        if (authState != null && backStackEntry?.destination?.route != Route.Main.path) {
-            navController.navigate(Route.Main.path) { popUpTo(Route.Login.path) { inclusive = true } }
+        val user = authState
+        if (user != null && !navigated) {
+            navigated = true
+            navController.navigate(Route.Main.path) {
+                popUpTo(Route.Login.path) { inclusive = true }
+                launchSingleTop = true
+            }
         }
-        if (authState == null && backStackEntry?.destination?.route == Route.Main.path) {
-            navController.navigate(Route.Login.path) { popUpTo(Route.Main.path) { inclusive = true } }
+        if (user == null && navigated) {
+            navigated = false
+            navController.navigate(Route.Login.path) {
+                popUpTo(Route.Main.path) { inclusive = true }
+                launchSingleTop = true
+            }
         }
     }
 
     NavHost(
         navController = navController,
-        startDestination = Route.Login.path
+        startDestination = if (authRepository.currentUser != null) Route.Main.path else Route.Login.path
     ) {
         composable(Route.Login.path) {
             LoginScreen(
                 authRepository = authRepository,
                 onLoggedIn = {
-                    navController.navigate(Route.Main.path) { popUpTo(Route.Login.path) { inclusive = true } }
+                    navigated = true
+                    navController.navigate(Route.Main.path) {
+                        popUpTo(Route.Login.path) { inclusive = true }
+                        launchSingleTop = true
+                    }
                 }
             )
         }
@@ -52,7 +67,6 @@ fun WormGptNavHost(
                 authRepository = authRepository,
                 onSignOut = {
                     authRepository.signOut()
-                    navController.navigate(Route.Login.path) { popUpTo(Route.Main.path) { inclusive = true } }
                 }
             )
         }

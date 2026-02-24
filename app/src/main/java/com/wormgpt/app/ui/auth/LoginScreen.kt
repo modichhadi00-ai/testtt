@@ -76,12 +76,9 @@ fun LoginScreen(
                 error = null
                 authRepository.signInWithGoogle(idToken).fold(
                     onSuccess = { user ->
-                        userRepository.createOrUpdateProfile(
-                            user.uid,
-                            user.email,
-                            user.displayName,
-                            user.photoUrl?.toString()
-                        )
+                        runCatching {
+                            userRepository.createOrUpdateProfile(user.uid, user.email, user.displayName, user.photoUrl?.toString())
+                        }
                         onLoggedIn()
                     },
                     onFailure = { e -> error = e.message; isLoading = false }
@@ -190,16 +187,13 @@ fun LoginScreen(
                                 } else {
                                     authRepository.signInWithEmailAndPassword(email, password)
                                 }
-                                result.fold(
-                                    onSuccess = { user ->
-                                        userRepository.createOrUpdateProfile(
-                                            user.uid,
-                                            user.email,
-                                            user.displayName,
-                                            user.photoUrl?.toString()
-                                        )
-                                        onLoggedIn()
-                                    },
+                    result.fold(
+                        onSuccess = { user ->
+                            runCatching {
+                                userRepository.createOrUpdateProfile(user.uid, user.email, user.displayName, user.photoUrl?.toString())
+                            }
+                            onLoggedIn()
+                        },
                                     onFailure = { e ->
                                         error = when {
                                             e.message?.contains("configuration_not_found") == true ->
@@ -271,12 +265,9 @@ fun LoginScreen(
                                 error = null
                                 authRepository.signInAnonymously().fold(
                                     onSuccess = { user ->
-                                        userRepository.createOrUpdateProfile(
-                                            user.uid,
-                                            user.email,
-                                            user.displayName ?: "Guest",
-                                            user.photoUrl?.toString()
-                                        )
+                                        runCatching {
+                                            userRepository.createOrUpdateProfile(user.uid, user.email, user.displayName ?: "Guest", user.photoUrl?.toString())
+                                        }
                                         onLoggedIn()
                                     },
                                     onFailure = {

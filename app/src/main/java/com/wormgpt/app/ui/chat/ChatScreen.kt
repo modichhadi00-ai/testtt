@@ -5,9 +5,11 @@ import android.widget.TextView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,6 +24,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Send
@@ -31,8 +34,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -46,8 +47,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.wormgpt.app.BuildConfig
 import com.wormgpt.app.data.model.Message
@@ -115,6 +119,9 @@ fun ChatScreen(
         }
     }
 
+    var input by remember { mutableStateOf("") }
+    val canSend = (input.isNotBlank() || pendingAttachmentUrls.isNotEmpty()) && !state.isLoading
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -125,166 +132,137 @@ fun ChatScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(10.dp)
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(12.dp),
+                        .padding(10.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        err,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.weight(1f)
-                    )
+                    Text(err, color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
                     TextButton(onClick = { viewModel.clearError() }) {
-                        Text("Dismiss", color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.labelMedium)
+                        Text("OK", color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
         }
 
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.weight(1f),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            items(state.messages, key = { msg -> msg.id.ifEmpty { "local-${msg.createdAt}-${msg.content.hashCode()}" } }) { msg ->
-                if (msg.role == "user") {
-                    UserMessageBubble(message = msg)
-                } else {
-                    AssistantMessageBubble(content = msg.content, context = context)
+        if (state.messages.isEmpty() && !state.isLoading && state.streamingContent.isEmpty()) {
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("WORMGPT", style = MaterialTheme.typography.headlineMedium, color = WormRed)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Ask me anything", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            if (state.isLoading && state.streamingContent.isEmpty()) {
-                item {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        Card(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = SurfaceVariant)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    strokeWidth = 2.dp,
-                                    color = WormRed
-                                )
-                                Text("Thinking...", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
+        } else {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(state.messages, key = { msg -> msg.id.ifEmpty { "local-${msg.createdAt}-${msg.content.hashCode()}" } }) { msg ->
+                    if (msg.role == "user") {
+                        UserBubble(message = msg)
+                    } else {
+                        AiBubble(content = msg.content, context = context)
+                    }
+                }
+                if (state.isLoading && state.streamingContent.isEmpty()) {
+                    item {
+                        Row(Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = WormRed)
+                            Text("Thinking...", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
-            }
-            if (state.streamingContent.isNotEmpty()) {
-                item(key = "streaming") {
-                    AssistantMessageBubble(content = state.streamingContent, context = context)
+                if (state.streamingContent.isNotEmpty()) {
+                    item(key = "streaming") {
+                        AiBubble(content = state.streamingContent, context = context)
+                    }
                 }
             }
         }
 
-        // Input bar
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                IconButton(
-                    onClick = { filePickerLauncher.launch("*/*") },
-                    enabled = canAttachFiles && !state.isLoading && !isUploading,
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        Icons.Default.AttachFile,
-                        contentDescription = if (canAttachFiles) "Attach" else "Attach (premium)",
-                        tint = if (canAttachFiles) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                var input by remember { mutableStateOf("") }
-                OutlinedTextField(
-                    value = input,
-                    onValueChange = { input = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("Message...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                    maxLines = 4,
-                    shape = RoundedCornerShape(20.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = WormRed,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                        cursorColor = WormRed,
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                    )
-                )
-                IconButton(
-                    onClick = {
-                        viewModel.sendMessage(input, pendingAttachmentUrls)
-                        input = ""
-                        pendingAttachmentUrls = emptyList()
-                    },
-                    enabled = (input.isNotBlank() || pendingAttachmentUrls.isNotEmpty()) && !state.isLoading,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(WormRed)
-                ) {
-                    Icon(
-                        Icons.Default.Send,
-                        contentDescription = "Send",
-                        tint = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
-            }
-        }
         if (pendingAttachmentUrls.isNotEmpty()) {
             Text(
                 "${pendingAttachmentUrls.size} file(s) attached",
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+                color = WormRed,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
             )
         }
-        if (!canAttachFiles) {
-            Text(
-                "Premium: attach files",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
-            )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            IconButton(
+                onClick = { filePickerLauncher.launch("*/*") },
+                enabled = canAttachFiles && !state.isLoading && !isUploading,
+                modifier = Modifier.size(34.dp)
+            ) {
+                Icon(
+                    Icons.Default.AttachFile,
+                    contentDescription = "Attach",
+                    tint = if (canAttachFiles) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(SurfaceCard)
+                    .padding(horizontal = 16.dp, vertical = 10.dp)
+            ) {
+                if (input.isEmpty()) {
+                    Text("Message...", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                BasicTextField(
+                    value = input,
+                    onValueChange = { input = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp),
+                    cursorBrush = SolidColor(WormRed),
+                    maxLines = 4,
+                    singleLine = false
+                )
+            }
+            IconButton(
+                onClick = {
+                    if (canSend) {
+                        viewModel.sendMessage(input, pendingAttachmentUrls)
+                        input = ""
+                        pendingAttachmentUrls = emptyList()
+                    }
+                },
+                enabled = canSend,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(if (canSend) WormRed else MaterialTheme.colorScheme.outline)
+            ) {
+                Icon(Icons.Default.Send, contentDescription = "Send", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))
+            }
         }
     }
 }
 
 @Composable
-private fun UserMessageBubble(message: Message) {
+private fun UserBubble(message: Message) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
         Card(
-            modifier = Modifier.widthIn(max = 280.dp),
-            shape = RoundedCornerShape(20.dp, 20.dp, 8.dp, 20.dp),
+            modifier = Modifier.widthIn(max = 300.dp),
+            shape = RoundedCornerShape(18.dp, 18.dp, 6.dp, 18.dp),
             colors = CardDefaults.cardColors(containerColor = WormRed),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
@@ -292,44 +270,35 @@ private fun UserMessageBubble(message: Message) {
                 text = message.content,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.padding(14.dp)
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
             )
         }
     }
 }
 
 @Composable
-private fun AssistantMessageBubble(
-    content: String,
-    context: android.content.Context
-) {
+private fun AiBubble(content: String, context: android.content.Context) {
     val markwon = remember { Markwon.create(context) }
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp, 20.dp, 20.dp, 8.dp),
+        shape = RoundedCornerShape(18.dp, 18.dp, 18.dp, 6.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            AndroidView(
-                factory = { ctx ->
-                    TextView(ctx).apply {
-                        setTextColor(android.graphics.Color.WHITE)
-                        setPadding(0, 0, 0, 0)
-                        textSize = 15f
-                        setLineSpacing(4f, 1.2f)
-                    }
-                },
-                update = { textView ->
-                    runCatching {
-                        markwon.setMarkdown(textView, content.ifEmpty { "_Thinking..._" })
-                    }
+        AndroidView(
+            factory = { ctx ->
+                TextView(ctx).apply {
+                    setTextColor(android.graphics.Color.WHITE)
+                    setPadding(32, 24, 32, 24)
+                    textSize = 15f
+                    setLineSpacing(4f, 1.15f)
                 }
-            )
-        }
+            },
+            update = { textView ->
+                runCatching {
+                    markwon.setMarkdown(textView, content.ifEmpty { "_Thinking..._" })
+                }
+            }
+        )
     }
 }
