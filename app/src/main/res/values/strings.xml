@@ -2,5 +2,5 @@
 <resources>
     <string name="app_name">WORMGPT</string>
     <!-- Required for Google Sign-In. Get from: Firebase Console > Project settings > Your apps > Android app > Web client ID. Format: 123456789-xxxx.apps.googleusercontent.com -->
-    <string name="default_web_client_id" translatable="false">YOUR_WEB_CLIENT_ID</string>
+    <string name="default_web_client_id" translatable="false">32308228203-0sluu3ng5eimp5f5h1ignifcc8vt06jb.apps.googleusercontent.com</string>
 </resources>
