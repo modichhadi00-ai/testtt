@@ -1,31 +1,36 @@
 {
   "project_info": {
-    "project_number": "123456789",
-    "project_id": "your-project-id",
-    "storage_bucket": "your-project-id.appspot.com"
+    "project_number": "32308228203",
+    "project_id": "worm-e994f",
+    "storage_bucket": "worm-e994f.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:123456789:android:abcdef",
+        "mobilesdk_app_id": "1:32308228203:android:9a9e17588b6ad05461012e",
         "android_client_info": {
           "package_name": "com.wormgpt.app"
         }
       },
       "oauth_client": [
         {
-          "client_id": "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com",
+          "client_id": "32308228203-0sluu3ng5eimp5f5h1ignifcc8vt06jb.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "your-api-key"
+          "current_key": "AIzaSyDzR5T_7L8NUAsyt-NF_LUKmSPzoAuuI_M"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "32308228203-0sluu3ng5eimp5f5h1ignifcc8vt06jb.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
