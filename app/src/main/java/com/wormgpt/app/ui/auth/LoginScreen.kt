@@ -182,5 +182,32 @@ fun LoginScreen(
         ) {
             Text("Sign in with Google")
         }
+        Spacer(modifier = Modifier.height(12.dp))
+        TextButton(
+            onClick = {
+                scope.launch {
+                    isLoading = true
+                    error = null
+                    authRepository.signInAnonymously().fold(
+                        onSuccess = { user ->
+                            userRepository.createOrUpdateProfile(
+                                user.uid,
+                                user.email,
+                                user.displayName ?: "Guest",
+                                user.photoUrl?.toString()
+                            )
+                            onLoggedIn()
+                        },
+                        onFailure = { e ->
+                            error = "Enable Anonymous sign-in in Firebase: Auth → Sign-in method → Anonymous"
+                            isLoading = false
+                        }
+                    )
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Continue as guest (no account)")
+        }
     }
 }

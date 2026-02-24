@@ -76,7 +76,9 @@ fun ChatScreen(
     val userRepository = remember { com.wormgpt.app.data.repository.UserRepository() }
     var userProfile by remember { mutableStateOf<com.wormgpt.app.data.model.UserProfile?>(null) }
     LaunchedEffect(userId) {
-        if (userId.isNotEmpty()) userProfile = userRepository.getProfile(userId)
+        if (userId.isNotEmpty()) {
+            runCatching { userRepository.getProfile(userId) }.onSuccess { userProfile = it }
+        }
     }
     val canAttachFiles = userProfile?.isPremium() == true
 
@@ -97,7 +99,9 @@ fun ChatScreen(
 
     LaunchedEffect(state.messages.size, state.streamingContent) {
         if (state.messages.isNotEmpty() || state.streamingContent.isNotEmpty()) {
-            listState.animateScrollToItem(state.messages.size)
+            val extra = if (state.streamingContent.isNotEmpty()) 1 else (if (state.isLoading) 1 else 0)
+            val lastIndex = (state.messages.size + extra - 1).coerceAtLeast(0)
+            runCatching { listState.animateScrollToItem(lastIndex) }
         }
     }
 
@@ -132,7 +136,7 @@ fun ChatScreen(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(state.messages) { msg ->
+            items(state.messages, key = { msg -> msg.id.ifEmpty { "local-${msg.createdAt}-${msg.content.hashCode()}" } }) { msg ->
                 if (msg.role == "user") {
                     UserMessageBubble(message = msg)
                 } else {
@@ -242,7 +246,9 @@ private fun AssistantMessageFullWidth(
                 }
             },
             update = { textView ->
-                markwon.setMarkdown(textView, content.ifEmpty { "_Thinking..._" })
+                runCatching {
+                    markwon.setMarkdown(textView, content.ifEmpty { "_Thinking..._" })
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()

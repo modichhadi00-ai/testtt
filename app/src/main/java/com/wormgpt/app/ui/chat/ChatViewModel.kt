@@ -34,8 +34,12 @@ class ChatViewModel(
     init {
         if (chatId != null) {
             viewModelScope.launch {
-                chatRepository.getMessages(chatId).collect { list ->
-                    _state.update { it.copy(messages = list) }
+                runCatching {
+                    chatRepository.getMessages(chatId).collect { list ->
+                        _state.update { it.copy(messages = list) }
+                    }
+                }.onFailure {
+                    _state.update { s -> s.copy(error = it.message ?: "Could not load messages") }
                 }
             }
         }

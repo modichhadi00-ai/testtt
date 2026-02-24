@@ -55,6 +55,16 @@ class AuthRepository(
         }
     }
 
+    /** Sign in without account. Enable "Anonymous" in Firebase Auth → Sign-in method. */
+    suspend fun signInAnonymously(): Result<FirebaseUser> {
+        return try {
+            val result = auth.signInAnonymously().await()
+            Result.success(result.user!!)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun updateDisplayName(name: String): Result<Unit> {
         return try {
             val user = auth.currentUser ?: return Result.failure(NullPointerException("No user"))
