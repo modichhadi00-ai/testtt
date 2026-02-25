@@ -18,6 +18,7 @@ interface ChatRequest {
   stream?: boolean;
   model?: string;
   max_tokens?: number;
+  api_key?: string;
 }
 
 /**
@@ -129,13 +130,15 @@ export const chatStream = functions.https.onRequest(async (req, res) => {
     return;
   }
 
-  const { messages, model = "deepseek-chat", max_tokens = 4096 } = body ?? {};
+  const { messages, model = "deepseek-chat", max_tokens = 4096, api_key: clientApiKey } = body ?? {};
   if (!Array.isArray(messages) || messages.length === 0) {
     res.status(400).json({ error: "messages array is required" });
     return;
   }
 
-  const apiKey = getDeepSeekApiKey();
+  const apiKey = (typeof clientApiKey === "string" && clientApiKey.trim().length > 0)
+    ? clientApiKey.trim()
+    : getDeepSeekApiKey();
   const payload = {
     model,
     messages,

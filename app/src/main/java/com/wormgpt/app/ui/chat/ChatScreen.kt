@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -55,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.wormgpt.app.BuildConfig
+import com.wormgpt.app.data.local.AppPreferences
 import com.wormgpt.app.data.model.Message
 import com.wormgpt.app.data.remote.WormGptApi
 import com.wormgpt.app.data.repository.AuthRepository
@@ -74,8 +74,13 @@ fun ChatScreen(
 ) {
     val context = LocalContext.current
     val chatRepository = remember { ChatRepository() }
-    val api = remember(authRepository) {
-        WormGptApi(BuildConfig.CLOUD_FUNCTIONS_URL) { authRepository.getIdToken() }
+    val prefs = remember { AppPreferences(context) }
+    val api = remember(authRepository, prefs) {
+        WormGptApi(
+            cloudFunctionBaseUrl = BuildConfig.CLOUD_FUNCTIONS_URL,
+            getToken = { authRepository.getIdToken() },
+            getDeepSeekApiKey = { prefs.getDeepSeekApiKey() }
+        )
     }
     val viewModel: ChatViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
         key = chatId ?: "new",
@@ -127,7 +132,6 @@ fun ChatScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .imePadding()
     ) {
         if (state.error != null) {
             val err = state.error!!

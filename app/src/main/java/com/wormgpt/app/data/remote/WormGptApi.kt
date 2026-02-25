@@ -14,10 +14,12 @@ import java.util.concurrent.TimeUnit
 
 /**
  * Calls the Firebase Cloud Function chatStream (HTTPS POST, SSE response).
+ * If getDeepSeekApiKey returns non-null, that key is sent so the server can use it for DeepSeek.
  */
 class WormGptApi(
     private val cloudFunctionBaseUrl: String,
-    private val getToken: suspend () -> String?
+    private val getToken: suspend () -> String?,
+    private val getDeepSeekApiKey: () -> String? = { null }
 ) {
     private val client = OkHttpClient.Builder()
         .connectTimeout(25, TimeUnit.SECONDS)
@@ -35,6 +37,7 @@ class WormGptApi(
             put("stream", true)
             put("model", "deepseek-chat")
             put("max_tokens", 4096)
+            getDeepSeekApiKey()?.takeIf { it.isNotBlank() }?.let { put("api_key", it) }
         }
         val url = cloudFunctionBaseUrl.trimEnd('/') + "/chatStream"
         val request = Request.Builder()

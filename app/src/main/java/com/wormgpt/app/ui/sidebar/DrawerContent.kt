@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.CardMembership
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -50,6 +51,7 @@ fun DrawerContent(
     onChatSelected: (String) -> Unit,
     onNewChat: () -> Unit,
     onDeleteChat: (String) -> Unit,
+    onSettings: () -> Unit,
     onManageSubscription: () -> Unit,
     onSignOut: () -> Unit
 ) {
@@ -87,6 +89,7 @@ fun DrawerContent(
         }
         Divider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp))
         DrawerItem(icon = Icons.Default.Add, label = "New chat", onClick = onNewChat)
+        DrawerItem(icon = Icons.Default.Settings, label = "Settings", onClick = onSettings)
         Text(
             "Recent",
             style = MaterialTheme.typography.labelSmall,

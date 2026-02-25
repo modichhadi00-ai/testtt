@@ -26,6 +26,7 @@ import androidx.navigation.navArgument
 import com.wormgpt.app.data.repository.AuthRepository
 import com.wormgpt.app.ui.chat.ChatScreen
 import com.wormgpt.app.ui.sidebar.DrawerContent
+import com.wormgpt.app.ui.settings.SettingsScreen
 import com.wormgpt.app.ui.subscription.SubscriptionScreen
 import com.wormgpt.app.ui.theme.Black
 import com.wormgpt.app.ui.theme.WormRed
@@ -68,6 +69,10 @@ fun MainScaffold(
                             launchSingleTop = true
                         }
                     }
+                },
+                onSettings = {
+                    scope.launch { drawerState.close() }
+                    navController.navigate("settings") { launchSingleTop = true }
                 },
                 onManageSubscription = {
                     scope.launch { drawerState.close() }
@@ -113,6 +118,9 @@ fun MainScaffold(
                 ) { backStackEntry ->
                     val chatId = backStackEntry.arguments?.getString("chatId") ?: return@composable
                     ChatScreen(chatId = chatId, authRepository = authRepository)
+                }
+                composable("settings") {
+                    SettingsScreen(onBack = { navController.popBackStack() })
                 }
                 composable("subscription") {
                     SubscriptionScreen(authRepository = authRepository)
