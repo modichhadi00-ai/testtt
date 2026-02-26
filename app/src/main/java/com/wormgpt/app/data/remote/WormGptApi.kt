@@ -24,9 +24,9 @@ class WormGptApi(
     private val getDeepSeekApiKey: () -> String? = { null }
 ) {
     private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(90, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(20, TimeUnit.SECONDS)
+        .readTimeout(50, TimeUnit.SECONDS)
+        .writeTimeout(20, TimeUnit.SECONDS)
         .retryOnConnectionFailure(true)
         .build()
 
@@ -145,7 +145,8 @@ class WormGptApi(
                 Result.success(Unit)
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            val message = e.message?.takeIf { it.isNotBlank() } ?: e.javaClass.simpleName
+            Result.failure(RuntimeException("$message", e))
         }
     }
 }

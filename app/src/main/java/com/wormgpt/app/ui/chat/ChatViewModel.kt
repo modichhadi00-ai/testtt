@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 data class ChatUiState(
     val messages: List<Message> = emptyList(),
@@ -81,25 +82,39 @@ class ChatViewModel(
                 val fullMessages = listOf(WormGptApi.ChatMessage("system", systemPrompt)) + apiMessages
 
                 var streamedContent = ""
-                val result = api.chatStream(
-                    messages = fullMessages,
-                    onChunk = { chunk ->
-                        streamedContent += chunk
-                        _state.update { it.copy(streamingContent = streamedContent) }
-                    },
-                    onDone = { }
-                )
+                val result = withTimeoutOrNull(55_000L) {
+                    api.chatStream(
+                        messages = fullMessages,
+                        onChunk = { chunk ->
+                            streamedContent += chunk
+                            _state.update { it.copy(streamingContent = streamedContent) }
+                        },
+                        onDone = { }
+                    )
+                }
+
+                if (result == null) {
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            streamingContent = "",
+                            error = "Request timed out. Check your internet and DeepSeek API key in Settings."
+                        )
+                    }
+                    return@launch
+                }
 
                 result.onFailure { e ->
                     val msg = e.message ?: "Request failed"
                     val display = when {
                         msg.contains("your-project-id") -> "Cloud Functions not deployed. Deploy: firebase deploy --only functions"
-                        msg.contains("Unable to resolve host") || msg.contains("UnknownHostException") -> "Cannot reach server. Check internet or deploy Cloud Functions."
+                        msg.contains("Unable to resolve host") || msg.contains("UnknownHostException") -> "No internet or server unreachable. Check connection."
+                        msg.contains("Connection refused") || msg.contains("Failed to connect") -> "Cannot connect to server. Check internet and try again."
                         msg.contains("404") -> "Cloud Function not found. Deploy: firebase deploy --only functions"
-                        msg.contains("401") || msg.contains("403") -> "Auth error. Try signing out and back in."
-                        msg.contains("500") -> "Server error. Check Cloud Functions logs."
+                        msg.contains("401") || msg.contains("403") || msg.contains("Invalid") || msg.contains("invalid") -> "DeepSeek API key invalid or expired. Check Settings and save a valid key."
+                        msg.contains("500") -> "Server error. Try again later."
                         msg.contains("DEEPSEEK") || msg.contains("DeepSeek") || msg.contains("api_key") -> "DeepSeek API key invalid or not set. Check Settings."
-                        msg.contains("SocketTimeout") || msg.contains("timeout") -> "Request timed out. Check internet and try again."
+                        msg.contains("SocketTimeout") || msg.contains("timeout") || msg.contains("Timeout") -> "Request timed out. Check internet and try again."
                         else -> msg
                     }
                     _state.update { it.copy(isLoading = false, error = display, streamingContent = "") }
@@ -132,10 +147,11 @@ class ChatViewModel(
                     runCatching { chatRepository.updateChatTitle(cid, text.take(50).ifEmpty { "New chat" }) }
                 }
             } catch (e: Exception) {
+                val errMsg = e.message?.takeIf { it.isNotBlank() } ?: e.javaClass.simpleName
                 _state.update {
                     it.copy(
                         isLoading = false,
-                        error = e.message ?: "Unexpected error",
+                        error = "Error: $errMsg",
                         streamingContent = ""
                     )
                 }

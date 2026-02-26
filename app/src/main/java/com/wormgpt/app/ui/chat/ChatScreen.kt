@@ -361,7 +361,12 @@ private fun TypingIndicator() {
 
 @Composable
 private fun UserBubble(message: Message) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 48.dp),
+        horizontalArrangement = Arrangement.End
+    ) {
         Card(
             modifier = Modifier.widthIn(max = 320.dp),
             shape = RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp),
