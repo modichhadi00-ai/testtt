@@ -29,7 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphicsLayer
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavType
@@ -162,5 +162,6 @@ private fun WormGptTitleGlow() {
         text = "WORMGPT",
         style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
         color = WormRed,
-        modifier = Modifier.graphicsLayer { alpha = shine }
+        modifier = Modifier.alpha(shine)
     )
+}
