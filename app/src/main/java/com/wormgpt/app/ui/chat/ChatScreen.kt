@@ -4,6 +4,13 @@ import android.net.Uri
 import android.widget.TextView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +51,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -165,17 +173,25 @@ fun ChatScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Text("WORMGPT", style = MaterialTheme.typography.headlineMedium, color = WormRed)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Ask me anything", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        "WORMGPT",
+                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 28.sp),
+                        color = WormRed
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        "Ask me anything",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         } else {
             LazyColumn(
                 state = listState,
                 modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(state.messages, key = { msg -> msg.id.ifEmpty { "local-${msg.createdAt}-${msg.content.hashCode()}" } }) { msg ->
                     if (msg.role == "user") {
@@ -185,11 +201,8 @@ fun ChatScreen(
                     }
                 }
                 if (state.isLoading && state.streamingContent.isEmpty()) {
-                    item {
-                        Row(Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = WormRed)
-                            Text("Thinking...", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                    item(key = "typing") {
+                        TypingIndicator()
                     }
                 }
                 if (state.streamingContent.isNotEmpty()) {
@@ -212,28 +225,28 @@ fun ChatScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 6.dp),
+                .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             IconButton(
                 onClick = { filePickerLauncher.launch("*/*") },
                 enabled = canAttachFiles && !state.isLoading && !isUploading,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(40.dp)
             ) {
                 Icon(
                     Icons.Default.AttachFile,
                     contentDescription = "Attach",
                     tint = if (canAttachFiles) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(24.dp))
                     .background(SurfaceCard)
-                    .padding(horizontal = 14.dp, vertical = 8.dp)
+                    .padding(horizontal = 18.dp, vertical = 12.dp)
             ) {
                 if (input.isEmpty()) {
                     Text("Message...", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -258,7 +271,7 @@ fun ChatScreen(
                 },
                 enabled = canSend,
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(44.dp)
                     .clip(CircleShape)
                     .background(if (canSend) WormRed else SurfaceCard)
             ) {
@@ -266,9 +279,74 @@ fun ChatScreen(
                     Icons.Default.Send,
                     contentDescription = "Send",
                     tint = if (canSend) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun TypingIndicator() {
+    val infiniteTransition = rememberInfiniteTransition(label = "typing")
+    val dot1 by infiniteTransition.animateFloat(
+        initialValue = 0.5f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = keyframes {
+                durationMillis = 900
+                0.5f at 0
+                1f at 150
+                0.5f at 300
+            },
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "dot1"
+    )
+    val dot2 by infiniteTransition.animateFloat(
+        initialValue = 0.5f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = keyframes {
+                durationMillis = 900
+                0.5f at 0
+                0.5f at 150
+                1f at 300
+                0.5f at 450
+            },
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "dot2"
+    )
+    val dot3 by infiniteTransition.animateFloat(
+        initialValue = 0.5f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = keyframes {
+                durationMillis = 900
+                0.5f at 0
+                0.5f at 300
+                1f at 450
+                0.5f at 600
+            },
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "dot3"
+    )
+    Card(
+        modifier = Modifier.widthIn(max = 80.dp),
+        shape = RoundedCornerShape(18.dp, 18.dp, 18.dp, 6.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(modifier = Modifier.size(8.dp).scale(dot1).background(WormRed, CircleShape))
+            Box(modifier = Modifier.size(8.dp).scale(dot2).background(WormRed, CircleShape))
+            Box(modifier = Modifier.size(8.dp).scale(dot3).background(WormRed, CircleShape))
         }
     }
 }
@@ -277,8 +355,8 @@ fun ChatScreen(
 private fun UserBubble(message: Message) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
         Card(
-            modifier = Modifier.widthIn(max = 300.dp),
-            shape = RoundedCornerShape(18.dp, 18.dp, 6.dp, 18.dp),
+            modifier = Modifier.widthIn(max = 320.dp),
+            shape = RoundedCornerShape(20.dp, 20.dp, 6.dp, 20.dp),
             colors = CardDefaults.cardColors(containerColor = WormRed),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
@@ -286,7 +364,7 @@ private fun UserBubble(message: Message) {
                 text = message.content,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
             )
         }
     }
@@ -297,17 +375,20 @@ private fun AiBubble(content: String, context: android.content.Context) {
     val markwon = remember { Markwon.create(context) }
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp, 18.dp, 18.dp, 6.dp),
+        shape = RoundedCornerShape(20.dp, 20.dp, 20.dp, 6.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         AndroidView(
             factory = { ctx ->
+                val padPx = (24 * ctx.resources.displayMetrics.density).toInt()
                 TextView(ctx).apply {
                     setTextColor(android.graphics.Color.WHITE)
-                    setPadding(32, 24, 32, 24)
-                    textSize = 15f
-                    setLineSpacing(4f, 1.15f)
+                    setPadding(padPx, padPx, padPx, padPx)
+                    textSize = 16f
+                    setLineSpacing(6f, 1.2f)
+                    setLinkTextColor(android.graphics.Color.parseColor("#E53935"))
+                    movementMethod = android.text.method.LinkMovementMethod.getInstance()
                 }
             },
             update = { textView ->

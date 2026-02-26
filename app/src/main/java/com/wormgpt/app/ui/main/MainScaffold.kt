@@ -1,9 +1,18 @@
 package com.wormgpt.app.ui.main
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -12,12 +21,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -88,16 +100,14 @@ fun MainScaffold(
     ) {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = {
-                        Text("WORMGPT", style = MaterialTheme.typography.titleLarge, color = WormRed)
-                    },
+                CenterAlignedTopAppBar(
+                    title = { WormGptTitleGlow() },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
                             Icon(Icons.Default.Menu, contentDescription = "Menu", tint = MaterialTheme.colorScheme.onSurface)
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Black)
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Black)
                 )
             },
             containerColor = Black
@@ -127,5 +137,32 @@ fun MainScaffold(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun WormGptTitleGlow() {
+    val infiniteTransition = rememberInfiniteTransition(label = "titleGlow")
+    val glow by infiniteTransition.animateFloat(
+        initialValue = 0.45f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1400, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "glow"
+    )
+    Box(contentAlignment = Alignment.Center) {
+        Text(
+            text = "WORMGPT",
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
+            color = WormRed.copy(alpha = 0.25f + 0.4f * glow),
+            modifier = Modifier.scale(1.08f)
+        )
+        Text(
+            text = "WORMGPT",
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
+            color = WormRed
+        )
     }
 }
