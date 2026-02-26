@@ -24,11 +24,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphicsLayer
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -112,6 +114,10 @@ fun MainScaffold(
             },
             containerColor = Black
         ) { innerPadding ->
+            val focusManager = LocalFocusManager.current
+            LaunchedEffect(drawerState.isOpen) {
+                if (drawerState.isOpen) focusManager.clearFocus()
+            }
             NavHost(
                 navController = navController,
                 startDestination = "chat/new",
@@ -143,26 +149,18 @@ fun MainScaffold(
 @Composable
 private fun WormGptTitleGlow() {
     val infiniteTransition = rememberInfiniteTransition(label = "titleGlow")
-    val glow by infiniteTransition.animateFloat(
-        initialValue = 0.45f,
+    val shine by infiniteTransition.animateFloat(
+        initialValue = 0.85f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1400, easing = LinearEasing),
+            animation = tween(1800, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "glow"
+        label = "shine"
     )
-    Box(contentAlignment = Alignment.Center) {
-        Text(
-            text = "WORMGPT",
-            style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
-            color = WormRed.copy(alpha = 0.25f + 0.4f * glow),
-            modifier = Modifier.scale(1.08f)
-        )
-        Text(
-            text = "WORMGPT",
-            style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
-            color = WormRed
-        )
-    }
-}
+    Text(
+        text = "WORMGPT",
+        style = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp),
+        color = WormRed,
+        modifier = Modifier.graphicsLayer { alpha = shine }
+    )

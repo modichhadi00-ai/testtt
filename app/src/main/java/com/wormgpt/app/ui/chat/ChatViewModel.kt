@@ -88,12 +88,13 @@ class ChatViewModel(
                 result.onFailure { e ->
                     val msg = e.message ?: "Request failed"
                     val display = when {
-                        msg.contains("your-project-id") -> "Cloud Functions not deployed. Deploy with: firebase deploy --only functions"
+                        msg.contains("your-project-id") -> "Cloud Functions not deployed. Deploy: firebase deploy --only functions"
                         msg.contains("Unable to resolve host") || msg.contains("UnknownHostException") -> "Cannot reach server. Check internet or deploy Cloud Functions."
                         msg.contains("404") -> "Cloud Function not found. Deploy: firebase deploy --only functions"
                         msg.contains("401") || msg.contains("403") -> "Auth error. Try signing out and back in."
                         msg.contains("500") -> "Server error. Check Cloud Functions logs."
-                        msg.contains("DEEPSEEK") || msg.contains("DeepSeek") -> "DeepSeek API key not set. See FULL_APP_SETUP.md step 10."
+                        msg.contains("DEEPSEEK") || msg.contains("DeepSeek") || msg.contains("api_key") -> "DeepSeek API key invalid or not set. Check Settings."
+                        msg.contains("SocketTimeout") || msg.contains("timeout") -> "Request timed out. Check internet and try again."
                         else -> msg
                     }
                     _state.update { it.copy(isLoading = false, error = display, streamingContent = "") }
@@ -101,6 +102,16 @@ class ChatViewModel(
                 }
 
                 val fullContent = _state.value.streamingContent
+                if (fullContent.isEmpty()) {
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            streamingContent = "",
+                            error = "No response from AI. Check your DeepSeek API key in Settings and your internet connection."
+                        )
+                    }
+                    return@launch
+                }
                 if (fullContent.isNotEmpty()) {
                     runCatching { chatRepository.addMessage(cid!!, "assistant", fullContent) }
                 }
@@ -116,7 +127,13 @@ class ChatViewModel(
                     runCatching { chatRepository.updateChatTitle(cid, text.take(50).ifEmpty { "New chat" }) }
                 }
             } catch (e: Exception) {
-                _state.update { it.copy(isLoading = false, error = e.message ?: "Unexpected error", streamingContent = "") }
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Unexpected error",
+                        streamingContent = ""
+                    )
+                }
             }
         }
     }

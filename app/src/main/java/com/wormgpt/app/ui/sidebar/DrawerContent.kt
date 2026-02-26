@@ -137,10 +137,11 @@ private fun DrawerItem(
 ) {
     Row(
         modifier = Modifier
+            .fillMaxWidth()
             .padding(horizontal = 14.dp, vertical = 4.dp)
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 12.dp),
+            .padding(horizontal = 12.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
@@ -153,10 +154,11 @@ private fun DrawerItem(
 private fun DrawerChatItem(chat: Chat, isSelected: Boolean, onClick: () -> Unit, onDelete: () -> Unit) {
     Row(
         modifier = Modifier
+            .fillMaxWidth()
             .padding(horizontal = 14.dp, vertical = 2.dp)
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
-            .padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+            .padding(start = 12.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
