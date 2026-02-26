@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.wormgpt.app.BuildConfig
 import com.wormgpt.app.data.local.AppPreferences
+import com.wormgpt.app.data.local.ConnectivityHelper
 import com.wormgpt.app.data.model.Message
 import com.wormgpt.app.data.remote.WormGptApi
 import com.wormgpt.app.data.repository.AuthRepository
@@ -83,6 +84,7 @@ fun ChatScreen(
     val context = LocalContext.current
     val chatRepository = remember { ChatRepository() }
     val prefs = remember { AppPreferences(context) }
+    val connectivityHelper = remember { ConnectivityHelper(context.applicationContext) }
     val api = remember(authRepository, prefs) {
         WormGptApi(
             cloudFunctionBaseUrl = BuildConfig.CLOUD_FUNCTIONS_URL,
@@ -92,7 +94,7 @@ fun ChatScreen(
     }
     val viewModel: ChatViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
         key = chatId ?: "new",
-        factory = ChatViewModelFactory(chatId, authRepository, chatRepository, api)
+        factory = ChatViewModelFactory(chatId, authRepository, chatRepository, api) { connectivityHelper.hasInternetConnection() }
     )
     val state by viewModel.state.collectAsState()
     val listState = rememberLazyListState()

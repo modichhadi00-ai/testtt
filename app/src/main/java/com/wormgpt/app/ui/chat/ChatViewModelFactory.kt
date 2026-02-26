@@ -10,10 +10,11 @@ class ChatViewModelFactory(
     private val chatId: String?,
     private val authRepository: AuthRepository,
     private val chatRepository: ChatRepository,
-    private val api: WormGptApi
+    private val api: WormGptApi,
+    private val hasInternetConnection: () -> Boolean
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return ChatViewModel(chatId, authRepository, chatRepository, api) as T
+        return ChatViewModel(chatId, authRepository, chatRepository, api, hasInternetConnection) as T
     }
 }

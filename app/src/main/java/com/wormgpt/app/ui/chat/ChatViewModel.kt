@@ -24,7 +24,8 @@ class ChatViewModel(
     private val chatId: String?,
     private val authRepository: AuthRepository,
     private val chatRepository: ChatRepository,
-    private val api: WormGptApi
+    private val api: WormGptApi,
+    private val hasInternetConnection: () -> Boolean
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ChatUiState(currentChatId = chatId))
@@ -46,6 +47,10 @@ class ChatViewModel(
 
     fun sendMessage(text: String, attachmentUrls: List<String> = emptyList()) {
         if (text.isBlank()) return
+        if (!hasInternetConnection()) {
+            _state.update { it.copy(error = "No internet connection. Please check your network and try again.") }
+            return
+        }
         viewModelScope.launch {
             try {
                 _state.update { it.copy(isLoading = true, error = null) }
