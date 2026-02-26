@@ -42,7 +42,8 @@ class WormGptApi(
     }
 
     /**
-     * Call DeepSeek API directly. No Cloud Function needed.
+     * Call DeepSeek API directly with non-streaming for reliable response.
+     * Single JSON response is parsed and passed to onChunk once, then onDone.
      */
     private fun chatStreamDirectDeepSeek(
         messages: List<ChatMessage>,
@@ -53,7 +54,7 @@ class WormGptApi(
         val body = JSONObject().apply {
             put("model", "deepseek-chat")
             put("messages", JSONArray(messages.map { JSONObject().apply { put("role", it.role); put("content", it.content) } }))
-            put("stream", true)
+            put("stream", false)
             put("max_tokens", 4096)
         }
         val request = Request.Builder()
@@ -62,7 +63,36 @@ class WormGptApi(
             .addHeader("Authorization", "Bearer $apiKey")
             .addHeader("Content-Type", "application/json")
             .build()
-        return executeStreamRequest(request, onChunk, onDone)
+        return try {
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    val errBody = response.body?.string() ?: response.message
+                    val err = try {
+                        if (errBody.startsWith("{")) JSONObject(errBody).optString("error", errBody) else errBody
+                    } catch (_: Exception) { errBody }
+                    return Result.failure(RuntimeException("${response.code}: $err"))
+                }
+                val str = response.body?.string() ?: ""
+                if (str.isBlank()) {
+                    onDone()
+                    return Result.success(Unit)
+                }
+                try {
+                    val json = JSONObject(str)
+                    val err = json.optJSONObject("error")?.optString("message", null) ?: json.optString("error", "")
+                    if (err.isNotEmpty()) return Result.failure(RuntimeException(err))
+                    val content = json.optJSONArray("choices")?.optJSONObject(0)?.optJSONObject("message")?.optString("content", "") ?: ""
+                    if (content.isNotEmpty()) onChunk(content)
+                } catch (e: Exception) {
+                    return Result.failure(RuntimeException("Parse error: ${e.message}", e))
+                }
+                onDone()
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            val message = e.message?.takeIf { it.isNotBlank() } ?: e.javaClass.simpleName
+            Result.failure(RuntimeException(message, e))
+        }
     }
 
     /**
