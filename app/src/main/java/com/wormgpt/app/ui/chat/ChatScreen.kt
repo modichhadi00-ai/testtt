@@ -139,10 +139,10 @@ fun ChatScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            val err = state.error!!
             .background(MaterialTheme.colorScheme.background)
     ) {
         if (state.error != null) {
+            val err = state.error!!
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -150,22 +150,22 @@ fun ChatScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+                Column(modifier = Modifier.fillMaxWidth().padding(14.dp)) {
                     Text(
-                        "Something went wrong. Please try again.",
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        style = MaterialTheme.typography.bodyMedium,
-                    Spacer(modifier = Modifier.height(8.dp))
-                        modifier = Modifier.weight(1f)
+                        "Error",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onErrorContainer
                     )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        err,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
                     TextButton(onClick = { viewModel.clearError() }) {
-                        Text("OK", color = MaterialTheme.colorScheme.onErrorContainer)
+                        Text("Dismiss", color = MaterialTheme.colorScheme.onErrorContainer)
                     }
                 }
             }
